@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stickman Dojo</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: #0e0e0e;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: 'Segoe UI', sans-serif;
+        color: #fff;
+        user-select: none;
+      }
+      #hud {
+        width: 800px;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: end;
+        gap: 8px;
+        padding-bottom: 6px;
+      }
+      .player-hud { display: flex; flex-direction: column; gap: 4px; }
+      .player-hud.p2 { align-items: flex-end; }
+      .player-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
+      .bar-track { width: 100%; height: 14px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
+      .bar-fill { height: 100%; border-radius: 3px; transition: width 0.1s linear; }
+      [data-player="1"] .bar-fill[data-hud="hp-bar"]     { background: #4caf50; width: 100%; }
+      [data-player="1"] .bar-fill[data-hud="energy-bar"] { background: #2196f3; width: 100%; }
+      [data-player="2"] .bar-fill[data-hud="hp-bar"]     { background: #f44336; width: 100%; }
+      [data-player="2"] .bar-fill[data-hud="energy-bar"] { background: #9c27b0; width: 100%; }
+      .hp-label { font-size: 10px; opacity: 0.6; margin-top: 1px; }
+      #centre-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 80px; }
+      #timer { font-size: 22px; font-weight: 700; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+      #scores { display: flex; gap: 12px; font-size: 18px; font-weight: 700; }
+      #game-canvas { display: block; border: 2px solid rgba(255,255,255,0.1); border-radius: 2px; }
+      #stats { width: 800px; display: grid; grid-template-columns: 1fr 1fr; padding-top: 6px; gap: 8px; }
+      .stat-block { display: flex; gap: 16px; font-size: 12px; opacity: 0.7; }
+      .stat-block.p2 { justify-content: flex-end; }
+      .stat-item span { font-weight: 700; opacity: 1; }
+      #overlay {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.62); gap: 16px; pointer-events: none;
+      }
+      #overlay.hidden { display: none; }
+      #overlay-title { font-size: 42px; font-weight: 900; letter-spacing: 4px; text-shadow: 0 0 24px #fff8; }
+      #overlay-sub { font-size: 16px; opacity: 0.7; letter-spacing: 2px; }
+    </style>
+  </head>
+  <body>
+
+
+    <!-- HUD -->
+    <div id="hud">
+      <!-- Player 1 -->
+      <div class="player-hud p1" data-player="1">
+        <div class="player-name">Player 1</div>
+        <div class="bar-track">
+          <div class="bar-fill" data-player="1" data-hud="hp-bar"
+               role="progressbar" aria-label="P1 HP"
+               aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" data-player="1" data-hud="energy-bar"
+               role="progressbar" aria-label="P1 Energy"
+               aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="hp-label" data-player="1" data-hud="hp-value">100 / 100</div>
+      </div>
+      <!-- Centre -->
+      <div id="centre-hud">
+        <div id="timer" data-hud="timer">00:00</div>
+        <div id="scores">
+          <span data-hud="score-p1">0</span>
+          <span style="opacity:0.4">–</span>
+          <span data-hud="score-p2">0</span>
+        </div>
+      </div>
+      <!-- Player 2 -->
+      <div class="player-hud p2" data-player="2">
+        <div class="player-name" style="text-align:right">Player 2</div>
+        <div class="bar-track">
+          <div class="bar-fill" data-player="2" data-hud="hp-bar"
+               role="progressbar" aria-label="P2 HP"
+               aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" data-player="2" data-hud="energy-bar"
+               role="progressbar" aria-label="P2 Energy"
+               aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="hp-label" style="text-align:right" data-player="2" data-hud="hp-value">100 / 100</div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="game-canvas" width="800" height="450"></canvas>
+
+    <!-- Stats -->
+    <div id="stats">
+      <div class="stat-block p1">
+        <div class="stat-item">DMG <span data-player="1" data-stat="damage">0</span></div>
+        <div class="stat-item">HITS <span data-player="1" data-stat="hits">0</span></div>
+        <div class="stat-item">BLOCKS <span data-player="1" data-stat="blocks">0</span></div>
+      </div>
+      <div class="stat-block p2">
+        <div class="stat-item">BLOCKS <span data-player="2" data-stat="blocks">0</span></div>
+        <div class="stat-item">HITS <span data-player="2" data-stat="hits">0</span></div>
+        <div class="stat-item">DMG <span data-player="2" data-stat="damage">0</span></div>
+      </div>
+    </div>
+
+    <!-- Round-over overlay -->
+    <div id="overlay">
+      <div id="overlay-title">STICKMAN DOJO</div>
+      <div id="overlay-sub">Press SPACE to start</div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+

@@ -1,0 +1,14 @@
+
+
+.DS_Store
+
+node_modules/
+dist/
+
+.tmp/
+
+.idea
+.vscode
+
+__pycache__
+venv
